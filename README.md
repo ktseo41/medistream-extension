@@ -1,6 +1,6 @@
-# medistream-extension README
+# Medistream Extension
 
-This is the README for your extension "medistream-extension". After writing up a brief description, we recommend including the following sections.
+메디스트림 개발자를 위한 VSCode Extension
 
 ## Features
 
