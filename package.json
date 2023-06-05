@@ -11,6 +11,10 @@
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ktseo41/medistream-extension.git"
+  },
   "publisher": "Bohyeon",
   "contributes": {
     "commands": [
