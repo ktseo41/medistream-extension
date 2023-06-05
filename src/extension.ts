@@ -33,17 +33,30 @@ async function startHotfix(
   progress: vscode.Progress<{ message?: string; increment?: number }>
 ) {
   try {
-    const workspacePath = await initHotfix();
+    const workspacePath = (await initHotfix()) || "";
     progress.report({
       increment: 20,
-      message: "develop 브랜치를 pull 중입니다.",
+      message: "develop 브랜치를 pull 하는 중입니다.",
     });
-    await pullOriginDevelop(workspacePath);
+    execSync("git checkout develop && git pull origin develop", {
+      cwd: workspacePath,
+    });
+    const mainBranchName = execSync(
+      "git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'",
+      {
+        cwd: workspacePath,
+      }
+    ).toString();
     progress.report({
       increment: 20,
-      message: "master 브랜치를 pull 중입니다.",
+      message: `${mainBranchName} 브랜치를 pull 하는 중입니다.`,
     });
-    await pullOriginMaster(workspacePath);
+    execSync(`git checkout ${mainBranchName}`, {
+      cwd: workspacePath,
+    });
+    execSync(`git pull origin ${mainBranchName}`, {
+      cwd: workspacePath,
+    });
     progress.report({
       increment: 20,
       message: "패키지 버전을 업데이트 중입니다.",
@@ -55,113 +68,81 @@ async function startHotfix(
     });
     await checkoutToHotfixBranch(hotfixVersion);
   } catch (error) {
-    vscode.window.showErrorMessage(error as string);
-  }
-}
-
-async function pullOriginDevelop(workspaceFolderPath: string) {
-  try {
-    execSync("git checkout develop && git pull origin develop", {
-      cwd: workspaceFolderPath,
-    });
-  } catch (error) {
-    throw new Error("develop 브랜치를 pull 할 수 없습니다.");
-  }
-}
-
-async function pullOriginMaster(workspaceFolderPath: string) {
-  try {
-    execSync("git checkout master && git pull origin master", {
-      cwd: workspaceFolderPath,
-    });
-  } catch (error) {
-    throw new Error("master 브랜치를 pull 할 수 없습니다.");
-  }
-}
-
-async function updatePackagesVersion(workspaceFolderPath: string) {
-  try {
-    const nextVersion = (() => {
-      const file = fs.readFileSync(
-        path.join(workspaceFolderPath!, "package.json"),
-        "utf-8"
-      );
-      const packageJson = JSON.parse(file);
-      const version = packageJson.version.split(".");
-      version[2] = parseInt(version[2]) + 1;
-      return version.join(".");
-    })() as string;
-
-    updateVersion(path.join(workspaceFolderPath!, "package.json"), nextVersion);
-    updateVersion(
-      path.join(workspaceFolderPath!, "package-lock.json"),
-      nextVersion
+    vscode.window.showErrorMessage(
+      `${(error as Error)?.message}\n${(error as Error)?.stack}}`
     );
-
-    return nextVersion;
-  } catch (error) {
-    throw new Error("패키지 버전을 업데이트 할 수 없습니다.");
-  }
-}
-
-async function checkoutToHotfixBranch(hotfixVersion: string) {
-  try {
-    let terminal = vscode.window.activeTerminal;
-
-    if (!terminal) {
-      terminal = vscode.window.createTerminal();
-      terminal.show();
-    }
-
-    terminal.sendText(`git checkout -b hotfix/${hotfixVersion}`, true);
-    // execSync(`git checkout -b hotfix/${hotfixVersion}`, {
-    //   cwd: workspaceFolderPath,
-    // });
-  } catch (error) {
-    throw new Error("hotfix 브랜치를 생성할 수 없습니다.");
+    console.error((error as Error)?.message);
+    console.error((error as Error)?.stack);
   }
 }
 
 async function initHotfix() {
-  try {
-    const workspaceFolder = vscode.workspace
-      .workspaceFolders as vscode.WorkspaceFolder[];
-    const workspaceFolderPath = workspaceFolder[0]?.uri?.fsPath;
-    const output = execSync("git diff-index HEAD --", {
-      cwd: workspaceFolderPath,
-    }).toString();
-    const lines = output.split("\n").filter((line) => line.length > 0);
-    const fileNames = lines
-      .map((line) => line.split(" "))
-      .map(([, , , , fileName]) => fileName)
-      .map((fileName) => fileName.replace("M\t", ""));
-    if (fileNames.length > 0) {
-      if (fileNames.every((fileName) => fileName.includes("submodules"))) {
-        const selection = await vscode.window.showInformationMessage(
-          `submodules 변경점이 있습니다. submodule을 update 하시겠습니까?`,
-          "Yes",
-          "No"
-        );
-
-        if (selection === "Yes") {
-          execSync("git submodule update --remote", {
-            cwd: workspaceFolderPath,
-          });
-          return workspaceFolderPath;
-        }
-      }
-      vscode.window.showErrorMessage(
-        `commit 하지 않은 변경점이 있습니다. - ${fileNames
-          .map((n) => `'${n}'`)
-          .join(",")}. commit이나 stash 후 다시 시도해주세요.`
+  const workspaceFolder = vscode.workspace
+    .workspaceFolders as vscode.WorkspaceFolder[];
+  const workspaceFolderPath = workspaceFolder[0]?.uri?.fsPath;
+  const output = execSync("git diff-index HEAD --", {
+    cwd: workspaceFolderPath,
+  }).toString();
+  const lines = output.split("\n").filter((line) => line.length > 0);
+  const fileNames = lines
+    .map((line) => line.split(" "))
+    .map(([, , , , fileName]) => fileName)
+    .map((fileName) => fileName.replace("M\t", ""));
+  if (fileNames.length > 0) {
+    if (fileNames.every((fileName) => fileName.includes("submodules"))) {
+      const selection = await vscode.window.showInformationMessage(
+        `submodules 변경점이 있습니다. submodule을 update 하시겠습니까?`,
+        "Yes",
+        "No"
       );
-      throw new Error("commit 하지 않은 변경점이 있습니다.");
-    }
 
-    return workspaceFolderPath;
-  } catch (error) {
-    throw new Error("Hotfix를 시작할 수 없습니다.");
+      if (selection === "Yes") {
+        execSync("git submodule update --remote", {
+          cwd: workspaceFolderPath,
+        });
+        return workspaceFolderPath;
+      }
+    }
+    vscode.window.showErrorMessage(
+      `commit 하지 않은 변경점이 있습니다. - ${fileNames
+        .map((n) => `'${n}'`)
+        .join(",")}. commit이나 stash 후 다시 시도해주세요.`
+    );
   }
+
+  return workspaceFolderPath;
+}
+
+async function updatePackagesVersion(workspaceFolderPath: string) {
+  const nextVersion = (() => {
+    const file = fs.readFileSync(
+      path.join(workspaceFolderPath!, "package.json"),
+      "utf-8"
+    );
+    const packageJson = JSON.parse(file);
+    const version = packageJson.version.split(".");
+    version[2] = parseInt(version[2]) + 1;
+    return version.join(".");
+  })() as string;
+
+  updateVersion(path.join(workspaceFolderPath!, "package.json"), nextVersion);
+  updateVersion(
+    path.join(workspaceFolderPath!, "package-lock.json"),
+    nextVersion
+  );
+
+  return nextVersion;
+}
+
+async function checkoutToHotfixBranch(hotfixVersion: string) {
+  let terminal = vscode.window.activeTerminal;
+
+  if (!terminal) {
+    terminal = vscode.window.createTerminal();
+    terminal.show();
+  }
+
+  terminal.sendText(`git checkout -b hotfix/${hotfixVersion}`, true);
 }
 
 // This method is called when your extension is activated
