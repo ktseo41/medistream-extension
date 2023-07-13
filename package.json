@@ -21,6 +21,10 @@
       {
         "command": "medistream-extension.startHotfix",
         "title": "[Medistream] Hotfix 시작"
+      },
+      {
+        "command": "medistream-extension.cmg",
+        "title": "[Medistream] Commit Message 생성"
       }
     ]
   },
