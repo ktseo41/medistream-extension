@@ -103,11 +103,14 @@ async function initHotfix() {
         return workspaceFolderPath;
       }
     }
+
     vscode.window.showErrorMessage(
       `commit 하지 않은 변경점이 있습니다. - ${fileNames
         .map((n) => `'${n}'`)
         .join(",")}. commit이나 stash 후 다시 시도해주세요.`
     );
+
+    throw new Error("commit 하지 않은 변경점이 있습니다.");
   }
 
   return workspaceFolderPath;
