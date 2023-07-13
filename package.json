@@ -20,7 +20,7 @@
     "commands": [
       {
         "command": "medistream-extension.startHotfix",
-        "title": "Hotfix 시작"
+        "title": "[Medistream] Hotfix 시작"
       }
     ]
   },
