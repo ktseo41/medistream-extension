@@ -26,3 +26,16 @@
 ### 0.0.2
 
 메인 브랜치명을 git에서 읽어오도록 변경
+
+### 0.0.3
+
+##### commit message 생성 기능 추가 🎉
+
+사용법
+
+- OPENAI에서 API 키 발급 (https://platform.openai.com/account/api-keys)
+- `~/.zshrc`, `~/.bashrc`, `~/.bash_profile` 등에 `export OPENAI_API_KEY=YOUR_API_KEY` 추가
+- 변경점 git stage에 추가 (ex: `git add .`)
+- Cmd + Shift + P, `[Medistream] Commit Message 생성` 선택
+
+commit되지 않은 변경점이 있어도 hotfix가 중단되지 않던 버그 수정
