@@ -2,7 +2,7 @@
   "name": "medistream-extension-dev",
   "displayName": "Medistream Development Tools (dev)",
   "description": "메디스트림에서 반복해서 사용하는 기능을 확장프로그램으로 분리했습니다.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.78.0"
   },

@@ -39,3 +39,7 @@
 - Cmd + Shift + P, `[Medistream] Commit Message 생성` 선택
 
 commit되지 않은 변경점이 있어도 hotfix가 중단되지 않던 버그 수정
+
+### 0.0.4
+
+- api key가 없을 경우 안내문구, 바로가기 추가. commit message 생성 프롬프트 수정
