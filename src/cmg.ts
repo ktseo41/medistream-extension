@@ -30,6 +30,23 @@ export default async function () {
     }
 
     const API_KEY = execSync("echo $OPENAI_API_KEY").toString().trim();
+
+    if (!API_KEY) {
+      vscode.window
+        .showInformationMessage(
+          "OPENAI_API_KEY가 없습니다. OPENAI API 페이지에 접속해 API KEY를 발급받고, 환경변수에 등록해주세요.",
+          "OPENAI API 페이지 열기"
+        )
+        .then((selection) => {
+          if (selection === "OPENAI API 페이지 열기") {
+            vscode.env.openExternal(
+              vscode.Uri.parse("https://platform.openai.com/account/api-keys")
+            );
+          }
+        });
+      return;
+    }
+
     // const verboseMessage = verbose ? "verbose mode. must include body" : "";
     // gpt4
     // debug
@@ -40,7 +57,7 @@ export default async function () {
       messages: [
         {
           role: "system",
-          content: `you are assistant to make commit msg for our team from git diff. msg must be 100 characters or less including space.\nwith under rules. subject should be korean\ncorrect format: <type>(?scope): <subject>\nscope is optional\ntypes:feat->새로운 기능 추가,fix->버그 수정,docs->문서 수정,style->코드 스타일 수정(기능상 변경 없음),refactor->코드 리팩토링,test->테스트 코드 수정,chore->기타 작업,perf->성능 개선,ci->CI 관련 작업,build->빌드 및 패키지 관련 작업 (ex: gulp, broccoli, npm),temp->일시적인 작업\nexample:제목 (필수사항)\nfeat: 플러그인을 추가한다 \n\n본문 (선택사항)\n이미지나 비디오가 아닌 파일을 드래그해서 삽입하는 기능을 추가한다 \n\n꼬리말 (선택사항)\nResolves #123(완료한 티켓 이슈 번호)\nSee also #456, #789(참조가 필요한 티켓 이슈 번호)\nsubjectDescriptions:변경 작업을 문장으로 요약한다,마침표를 사용하지 않고 명령형 어미(ex. -한다)로 마친다\nand example: feat: 이미지나 비디오가 아닌 파일을 드래그해서 삽입하는 플러그인을 추가한다`,
+          content: `당신은 코드 변경점으로부터 커밋 메시지를 생성해주는 역할을 담당합니다. 커밋 메세지는 공백을 포함하여 100자 이내여야 합니다. 형식은 다음과 같습니다: <type>: <subject>\ntype 종류는 다음과 같습니다. 반드시 조건에 맞는 type을 사용해야합니다.\nfeat->새로운 기능 추가,fix->버그 수정,docs->문서 수정,style->코드 스타일 수정(기능상 변경 없음),refactor->코드 리팩토링,test->테스트 코드 수정,chore->기타 작업,perf->성능 개선,ci->CI 관련 작업,build->빌드 및 패키지 관련 작업 (ex: gulp, broccoli, npm),temp->일시적인 작업\n\n또한 subject는 다음과 같은 규칙을 따라야합니다: 변경 작업을 문장으로 요약하고, 마침표를 사용하지 않고 명령형 어미(ex. -한다)로 마친다.다음은 예시입니다.\n\nfeat: 플러그인을 추가한다 \n\n`,
         },
         {
           role: "user",
